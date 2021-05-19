@@ -13,6 +13,7 @@ public class Dice : MonoBehaviour
 
     void Start()
     {
+        GameManager.GameOver += GameOver;
         diceRenderer = GetComponent<SpriteRenderer>();
         allowRoll = true;
     }
@@ -45,5 +46,15 @@ public class Dice : MonoBehaviour
         allowRoll = true;
         diceRenderer.sprite = diceImages[diceNumber];
         yield return null;
+    }
+
+    private void GameOver()
+    {
+        allowRoll = false;
+    }
+
+    private void OnDisable()
+    {
+        GameManager.GameOver -= GameOver;
     }
 }

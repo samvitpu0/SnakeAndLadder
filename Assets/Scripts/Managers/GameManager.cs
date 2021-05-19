@@ -5,35 +5,29 @@ using UnityEngine;
 using PsypherLibrary.SupportLibrary.Utils.Generics;
 using PsypherLibrary.SupportLibrary.Extensions;
 
-public class GameManager : GenericManager<GameManager>
+public class GameManager : GenericSingleton<GameManager>
 {
+    public static Action<int> InitPlayerList;
     public static Action<int, int> MovePlayer;
+    public static Action GameOver;
 
-    [SerializeField] private int totalNumberOfPlayers = 1;
-
+    private int totalNumberOfPlayers = 1;
     private const int WIN_POINT_INDEX = 99;
-
     private List<Player> players;
-    private List<Player> playersWon;
-    private int currentPlayerTurn = 1;
-
-    public int CurrentPlayerTurn
-    {
-        get
-        {
-            return currentPlayerTurn;
-        }
-        set
-        {
-            if (value > totalNumberOfPlayers)
-                currentPlayerTurn = 1;
-        }
-    }
+    private List<int> playersWon;
+    private int currentPlayerTurn = 0;
 
     private void Start()
     {
-        playersWon = new List<Player>();
+        playersWon = new List<int>();
     }
+
+    public void SetTotalnumberOfPlayers(int _numberOfPlayers)
+    {
+        totalNumberOfPlayers = _numberOfPlayers;
+        InitPlayerList.SafeInvoke(totalNumberOfPlayers);
+    }
+
 
     public void InitPlayers(List<Player> _players)
     {
@@ -42,19 +36,36 @@ public class GameManager : GenericManager<GameManager>
 
     public void DiceRolled(int _diceNumber)
     {
-        MovePlayer.SafeInvoke(CurrentPlayerTurn, _diceNumber);
+        MovePlayer.SafeInvoke(currentPlayerTurn, _diceNumber);
     }
-    public void PlayerMoved(Player _player)
+    public void PlayerMoved(int _playerIndex)
     {
-        if(_player.CurrentWaypoint.WaypointIndex >= WIN_POINT_INDEX)
+        if(players[_playerIndex].CurrentWaypoint.WaypointIndex >= WIN_POINT_INDEX)
         {
-            playersWon.Add(_player);
+            playersWon.Add(_playerIndex);
         }
 
+        if(playersWon.Count >= totalNumberOfPlayers-1)
+        {
+            //Game Over
+            GameOver.SafeInvoke();
+            return;
+        }
+        
         ChangeTurn();
     }
     private void ChangeTurn()
     {
-        CurrentPlayerTurn++;                     
+        currentPlayerTurn++;
+        if (currentPlayerTurn > totalNumberOfPlayers - 1)
+            currentPlayerTurn = 0;
+
+        
+        for (int i = 0; i < players.Count; i++)
+        {
+            if (playersWon.Contains(currentPlayerTurn))
+                currentPlayerTurn++;
+        }
+        
     }
 }

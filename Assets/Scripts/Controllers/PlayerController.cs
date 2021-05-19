@@ -9,19 +9,22 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private List<Player> Players;
     [SerializeField] private List<Waypoint> BoardPoints;
     [SerializeField] private List<SnakeAndLadderPath> SnakeAndLadderPaths;
-
     [SerializeField] private float playerMoveDuration = 0.3f;
     [SerializeField] private float playerSpeedOnPath = 5f;
+
+    private List<Player> PlayerList;
     private float distanceTravelled;
-
     private int targetWaypoint;
-
     private int currentPlayerNumber;
     private int diceNumber;
 
+
     private void Start()
     {
+        GameManager.InitPlayerList += InitPlayerList;
         GameManager.MovePlayer += MovePlayer;
+
+        PlayerList = new List<Player>();
 
         for (int i = 0; i < BoardPoints.Count; i++)
         {
@@ -29,39 +32,51 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void InitPlayerList(int _totalNumberofPlayers)
+    {
+        for(int i=0; i < _totalNumberofPlayers; i++)
+        {
+            Players[i].gameObject.SetActive(true);
+            PlayerList.Add(Players[i]);
+        }
+        GameManager.Instance.InitPlayers(PlayerList);
+    }
+
     public void MovePlayer(int _playerNumber, int _diceNumber)
     {
         currentPlayerNumber = _playerNumber;
         diceNumber = _diceNumber;
         
-        targetWaypoint = Players[currentPlayerNumber - 1].CurrentWaypoint.WaypointIndex + diceNumber;
+        targetWaypoint = Players[currentPlayerNumber].CurrentWaypoint.WaypointIndex + diceNumber;
 
-        var _targetPosition = BoardPoints[Players[currentPlayerNumber - 1].CurrentWaypoint.WaypointIndex + 1].transform.position;
-        Players[currentPlayerNumber - 1].transform.DOMove(_targetPosition, playerMoveDuration, snapping: false).OnComplete(MoveComplete);
+        var _targetPosition = BoardPoints[Players[currentPlayerNumber].CurrentWaypoint.WaypointIndex + 1].transform.position;
+        Players[currentPlayerNumber].transform.DOMove(_targetPosition, playerMoveDuration, snapping: false).OnComplete(MoveComplete);
       
     }
 
     private void MoveComplete()
     {
-        Players[currentPlayerNumber - 1].CurrentWaypoint = BoardPoints[Players[currentPlayerNumber - 1].CurrentWaypoint.WaypointIndex + 1];
-        if (targetWaypoint != Players[currentPlayerNumber - 1].CurrentWaypoint.WaypointIndex)
+        Players[currentPlayerNumber].CurrentWaypoint = BoardPoints[Players[currentPlayerNumber].CurrentWaypoint.WaypointIndex + 1];
+        if (targetWaypoint != Players[currentPlayerNumber].CurrentWaypoint.WaypointIndex)
         {
-            var _targetPosition = BoardPoints[Players[currentPlayerNumber - 1].CurrentWaypoint.WaypointIndex + 1].transform.position;
-            Players[currentPlayerNumber - 1].transform.DOMove(_targetPosition, playerMoveDuration, snapping: false).OnComplete(MoveComplete);
+            var _targetPosition = BoardPoints[Players[currentPlayerNumber].CurrentWaypoint.WaypointIndex + 1].transform.position;
+            Players[currentPlayerNumber].transform.DOMove(_targetPosition, playerMoveDuration, snapping: false).OnComplete(MoveComplete);
         }
         else
         {
+            
             CheckWaypointForPaths();
-            GameManager.Instance.PlayerMoved(Players[currentPlayerNumber - 1]);
+            
+            GameManager.Instance.PlayerMoved(currentPlayerNumber);
         }
     }
     private void CheckWaypointForPaths()
     {
-        if (Players[currentPlayerNumber - 1].CurrentWaypoint.isAlternatePath)
+        if (Players[currentPlayerNumber].CurrentWaypoint.isAlternatePath)
         {
             foreach(SnakeAndLadderPath path in SnakeAndLadderPaths)
             {
-                if(path.PathIndex == Players[currentPlayerNumber - 1].CurrentWaypoint.WaypointIndex)
+                if(path.PathIndex == Players[currentPlayerNumber].CurrentWaypoint.WaypointIndex)
                 {                   
                     StartCoroutine(MovePlayerOnPath(path));
                     break;
@@ -83,19 +98,20 @@ public class PlayerController : MonoBehaviour
         while (timer > 0)
         {           
             distanceTravelled += playerSpeedOnPath * Time.deltaTime;
-            Players[currentPlayerNumber - 1].transform.position = _path.path.GetPointAtDistance(distanceTravelled, EndOfPathInstruction.Stop);
+            Players[currentPlayerNumber].transform.position = _path.path.GetPointAtDistance(distanceTravelled, EndOfPathInstruction.Stop);
             timer -= Time.deltaTime;
             yield return null;
         }
         distanceTravelled = 0f;
-        Players[currentPlayerNumber - 1].transform.position = BoardPoints[path.TargetWaypointIndex].transform.position;
-        Players[currentPlayerNumber - 1].CurrentWaypoint = BoardPoints[path.TargetWaypointIndex];
+        Players[currentPlayerNumber].transform.position = BoardPoints[path.TargetWaypointIndex].transform.position;
+        Players[currentPlayerNumber].CurrentWaypoint = BoardPoints[path.TargetWaypointIndex];
         Debug.Log("PlayerMoved");
         yield return null;
     }
 
     private void OnDisable()
     {
+        GameManager.InitPlayerList -= InitPlayerList;
         GameManager.MovePlayer -= MovePlayer;
     }
 }

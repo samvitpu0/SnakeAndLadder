@@ -9,15 +9,16 @@ public class UIManager : MonoBehaviour
 
     public GameObject[] playerIcons;
 
-    public Action<int> ChangePlayerNumber;
+    //public Action<int> ChangePlayerNumber;
 
     public GameObject playerChoosePanel;
 
-    private int playerNumber = 3;
+    private int playerNumber = 2;
 
     public void OnStart()
     {
-        ChangePlayerNumber(playerNumber);
+        //ChangePlayerNumber(playerNumber);
+        GameManager.Instance.SetTotalnumberOfPlayers(playerNumber);
         playerChoosePanel.SetActive(false);
     }
 
@@ -26,23 +27,27 @@ public class UIManager : MonoBehaviour
         switch(playerChoseDropDown.value)
         {
             case 0:
-                playerNumber = 3;             
+                playerNumber = 2;             
                 break;
 
             case 1:
-                playerNumber = 4;
+                playerNumber = 3;
                 break;
 
             case 2:
-                playerNumber = 5;
+                playerNumber = 4;
                 break;
 
             case 3:
+                playerNumber = 5;
+                break;
+
+            case 4:
                 playerNumber = 6;
                 break;
 
             default:
-                playerNumber = 3;
+                playerNumber = 2;
                 break;           
         }
 
